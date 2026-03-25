@@ -1,0 +1,20 @@
+### Dodaj pierwsze zadanie
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Nauczyć się REST API",
+  "completed": false
+}
+
+### Dodaj drugie zadanie
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Zobaczyć dane w pgAdmin",
+  "completed": false
+}
+
+### Pobierz wszystkie zadania
+GET http://localhost:8080/api/tasks
