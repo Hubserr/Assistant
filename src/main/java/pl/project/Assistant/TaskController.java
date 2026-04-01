@@ -2,11 +2,15 @@ package pl.project.Assistant;
 
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping("/api/v1/tasks")
 public class TaskController {
     private final TaskService service;
 
@@ -15,19 +19,29 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> getAll(){
-        return service.getAllTask();
+    public Page<TaskResponse> getTasks(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean completed,
+            @org.springdoc.core.annotations.ParameterObject Pageable pageable){
+        return service.getTasks(search,completed,pageable).map(TaskMapper::toResponse);
     }
     @PostMapping
-    public Task add(@Valid @RequestBody Task task){
-        return service.addTask(task);
+    public TaskResponse add(@Valid @RequestBody TaskRequest request){
+        Task task = TaskMapper.toEntity(request);
+        Task saved = service.addTask(task);
+        return TaskMapper.toResponse(saved);
     }
+
     @PutMapping({"/{id}"})
-    public Task update(@PathVariable Long id, @Valid @RequestBody Task task){
-        return service.updateTask(id,task);
+    public TaskResponse update(@PathVariable Long id, @Valid @RequestBody TaskRequest request){
+        Task task = TaskMapper.toEntity(request);
+        Task saved = service.updateTask(id,task);
+        return TaskMapper.toResponse(saved);
     }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id){
+
         service.removeTask(id);
     }
 

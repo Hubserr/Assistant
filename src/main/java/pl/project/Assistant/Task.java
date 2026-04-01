@@ -1,6 +1,7 @@
 package pl.project.Assistant;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -14,8 +15,7 @@ public class Task {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @NotBlank(message = "Tytuł nie może być pusty!")
-    @Size(min=3,message = "Tytuł musi mieć przynajmniej 3 znaki")
+
     private String title;
     private String description;
     private boolean completed;
