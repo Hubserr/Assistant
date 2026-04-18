@@ -1,4 +1,4 @@
-package pl.project.Assistant;
+package pl.project.Assistant.config;
 
 
 import org.springframework.http.ResponseEntity;

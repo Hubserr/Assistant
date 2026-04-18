@@ -1,4 +1,4 @@
-package pl.project.Assistant;
+package pl.project.Assistant.task;
 
 
 public class TaskMapper {

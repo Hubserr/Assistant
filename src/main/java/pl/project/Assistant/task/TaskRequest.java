@@ -1,4 +1,4 @@
-package pl.project.Assistant;
+package pl.project.Assistant.task;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;

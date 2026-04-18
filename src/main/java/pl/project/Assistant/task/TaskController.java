@@ -1,14 +1,11 @@
-package pl.project.Assistant;
+package pl.project.Assistant.task;
 
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 @RestController
 @RequestMapping("/api/v1/tasks")
 public class TaskController {
