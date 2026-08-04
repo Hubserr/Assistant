@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.project.Assistant.auth.User;
 import pl.project.Assistant.auth.UserRepository;
+import pl.project.Assistant.exception.AccessDeniedException;
+import pl.project.Assistant.exception.ResourceNotFoundException;
 
 @Service
 public class TaskService {
@@ -21,7 +23,7 @@ public class TaskService {
     public Page<Task> getTasks(String search, Boolean completed, Pageable pageable){
 
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = userRepository.findByEmail(email).orElseThrow(()->new RuntimeException("User not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(()->new ResourceNotFoundException("User not found"));
 
         Specification<Task> spec = (root, query, cb) ->
                 cb.equal(root.get("owner"),user);
@@ -39,11 +41,11 @@ public class TaskService {
     @Transactional
     public Task updateTask(Long id,Task updatedTask){
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = userRepository.findByEmail(email).orElseThrow(()->new RuntimeException("User not found"));
-        Task task = taskRepository.findById(id).orElseThrow(()->new RuntimeException("Task not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(()->new ResourceNotFoundException("User not found"));
+        Task task = taskRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Task",id));
 
         if(!task.getOwner().equals(user)){
-            throw new RuntimeException("Access denied!");
+            throw new AccessDeniedException("Access denied!");
         }
 
         task.setTitle(updatedTask.getTitle());
@@ -56,17 +58,17 @@ public class TaskService {
 
     public Task addTask(Task task){
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = userRepository.findByEmail(email).orElseThrow(()->new RuntimeException("User not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(()->new ResourceNotFoundException("User not found"));
         task.setOwner(user);
         return taskRepository.save(task);
     }
 
     public void removeTask(Long id){
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = userRepository.findByEmail(email).orElseThrow(()->new RuntimeException("User not found"));
-        Task task = taskRepository.findById(id).orElseThrow(()->new RuntimeException("Task not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(()->new ResourceNotFoundException("User not found"));
+        Task task = taskRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Task",id));
         if(!task.getOwner().equals(user)) {
-            throw new RuntimeException("Access denied!");
+            throw new AccessDeniedException("Access denied!");
         }
         taskRepository.deleteById(id);
     }
