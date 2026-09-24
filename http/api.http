@@ -1,0 +1,100 @@
+@host = http://localhost:8080
+
+### Register user A
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{ "email": "anna@test.com", "password": "password123", "confirmPassword": "password123" }
+
+> {%
+    if (response.status === 200) client.global.set("tokenA", response.body.token);
+%}
+
+### Login user A
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "email": "anna@test.com", "password": "password123" }
+
+> {%
+    client.test("Login successful", () => client.assert(response.status === 200));
+    client.global.set("tokenA", response.body.token);
+%}
+
+### Login with wrong password
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "email": "anna@test.com", "password": "wrongpassword" }
+
+### Create task
+POST {{host}}/api/v1/tasks
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "title": "Build finance module", "description": "Categories and transactions", "until": "2026-12-31", "completed": false }
+
+> {%
+    client.test("Task created", () => client.assert(response.status === 200));
+    client.global.set("taskId", response.body.id);
+%}
+
+### Create task with empty title
+POST {{host}}/api/v1/tasks
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "title": "", "completed": false }
+
+> {% client.test("Validation rejects empty title", () => client.assert(response.status === 400)); %}
+
+### Get tasks with filters and pagination
+GET {{host}}/api/v1/tasks?completed=false&page=0&size=5&sort=createdAt,desc
+Authorization: Bearer {{tokenA}}
+
+### Update task
+PUT {{host}}/api/v1/tasks/{{taskId}}
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "title": "Build finance module", "description": "Done!", "until": "2026-12-31", "completed": true }
+
+### Register user B
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{ "email": "bob@test.com", "password": "password123", "confirmPassword": "password123" }
+
+> {%
+    if (response.status === 200) client.global.set("tokenB", response.body.token);
+%}
+
+### Login user B
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "email": "bob@test.com", "password": "password123" }
+
+> {% client.global.set("tokenB", response.body.token); %}
+
+### User B updates task of user A
+PUT {{host}}/api/v1/tasks/{{taskId}}
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{ "title": "Hijacked", "completed": false }
+
+> {% client.test("Access to foreign task denied", () => client.assert(response.status === 403)); %}
+
+### User B gets tasks
+GET {{host}}/api/v1/tasks
+Authorization: Bearer {{tokenB}}
+
+> {% client.test("User B sees no foreign tasks", () => client.assert(response.body.content.length === 0)); %}
+
+### Get tasks without token
+GET {{host}}/api/v1/tasks
+
+### Delete task
+DELETE {{host}}/api/v1/tasks/{{taskId}}
+Authorization: Bearer {{tokenA}}

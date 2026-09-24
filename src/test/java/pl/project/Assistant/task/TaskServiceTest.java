@@ -10,12 +10,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import pl.project.Assistant.auth.CurrentUserProvider;
 import pl.project.Assistant.auth.User;
 import pl.project.Assistant.auth.UserRepository;
 import pl.project.Assistant.exception.AccessDeniedException;
 import pl.project.Assistant.exception.ResourceNotFoundException;
-
-import java.lang.module.ResolutionException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,18 +28,13 @@ public class TaskServiceTest {
     private TaskRepository taskRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserProvider currentUserProvider;
 
     @InjectMocks
     private TaskService taskService;
 
     private static final String TEST_EMAIL = "test@test.com";
 
-    @BeforeEach
-    void setUpSecurityContext() {
-        var authentication = new UsernamePasswordAuthenticationToken(TEST_EMAIL, null);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
 
     @Test
     void addTask_shouldSetOwnerAndSaveTask() {
@@ -50,7 +44,7 @@ public class TaskServiceTest {
         Task newTask = new Task();
         newTask.setTitle("Test task");
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(currentUserProvider.getCurrentUser()).thenReturn(user);
         when(taskRepository.save(newTask)).thenReturn(newTask);
 
         Task result = taskService.addTask(newTask);
@@ -73,7 +67,7 @@ public class TaskServiceTest {
         updatedTask.setCompleted(true);
         updatedTask.setDescription("Description");
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(currentUserProvider.getCurrentUser()).thenReturn(user);
         when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
         when(taskRepository.save(existingTask)).thenReturn(existingTask);
 
@@ -96,7 +90,7 @@ public class TaskServiceTest {
         updatedTask.setCompleted(true);
         updatedTask.setDescription("Description");
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(currentUserProvider.getCurrentUser()).thenReturn(user);
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> taskService.updateTask(999L,updatedTask) );
@@ -118,7 +112,7 @@ public class TaskServiceTest {
         updatedTask.setCompleted(true);
         updatedTask.setDescription("Description");
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(currentUserProvider.getCurrentUser()).thenReturn(user);
         when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
 
         assertThrows(AccessDeniedException.class, () -> taskService.updateTask(1L,updatedTask));
@@ -135,7 +129,7 @@ public class TaskServiceTest {
         existingTask.setOwner(user);
         existingTask.setTitle("Title");
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(currentUserProvider.getCurrentUser()).thenReturn(user);
         when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
 
         taskService.removeTask(1L);
@@ -149,7 +143,7 @@ public class TaskServiceTest {
         User user = new User();
         user.setEmail(TEST_EMAIL);
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(currentUserProvider.getCurrentUser()).thenReturn(user);
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, ()->taskService.removeTask(999L));
@@ -166,7 +160,7 @@ public class TaskServiceTest {
         existingTask.setOwner(user2);
         existingTask.setTitle("Title");
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(currentUserProvider.getCurrentUser()).thenReturn(user);
         when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
 
         assertThrows(AccessDeniedException.class, () -> taskService.removeTask(1L));
