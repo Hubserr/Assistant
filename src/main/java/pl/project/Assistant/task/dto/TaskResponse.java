@@ -1,4 +1,4 @@
-package pl.project.Assistant.task;
+package pl.project.Assistant.task.dto;
 
 import lombok.Data;
 

@@ -5,6 +5,9 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+import pl.project.Assistant.task.dto.TaskMapper;
+import pl.project.Assistant.task.dto.TaskRequest;
+import pl.project.Assistant.task.dto.TaskResponse;
 
 @RestController
 @RequestMapping("/api/v1/tasks")

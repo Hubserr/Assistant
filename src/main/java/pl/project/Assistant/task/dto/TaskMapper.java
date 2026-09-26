@@ -1,5 +1,7 @@
-package pl.project.Assistant.task;
+package pl.project.Assistant.task.dto;
 
+
+import pl.project.Assistant.task.Task;
 
 public class TaskMapper {
 

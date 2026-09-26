@@ -1,0 +1,260 @@
+@host = http://localhost:8080
+
+### Register user A
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{ "email": "anna@test.com", "password": "password123", "confirmPassword": "password123" }
+
+### Login user A
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "email": "anna@test.com", "password": "password123" }
+
+> {% client.global.set("tokenA", response.body.token); %}
+
+### Register user B
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{ "email": "bob@test.com", "password": "password123", "confirmPassword": "password123" }
+
+### Login user B
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "email": "bob@test.com", "password": "password123" }
+
+> {% client.global.set("tokenB", response.body.token); %}
+
+### Create category Food
+POST {{host}}/api/v1/finance/categories
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "name": "Food" }
+
+> {%
+    client.test("Category Food created", () => client.assert(response.status === 201));
+    client.global.set("foodId", response.body.id);
+%}
+
+### Create category Salary
+POST {{host}}/api/v1/finance/categories
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "name": "Salary" }
+
+> {%
+    client.test("Category Salary created", () => client.assert(response.status === 201));
+    client.global.set("salaryId", response.body.id);
+%}
+
+### Create duplicate category with different case
+POST {{host}}/api/v1/finance/categories
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "name": "food" }
+
+> {% client.test("Duplicate category rejected", () => client.assert(response.status === 409)); %}
+
+### Create category with empty name
+POST {{host}}/api/v1/finance/categories
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "name": "" }
+
+> {% client.test("Empty category name rejected", () => client.assert(response.status === 400)); %}
+
+### Get categories of user A
+GET {{host}}/api/v1/finance/categories
+Authorization: Bearer {{tokenA}}
+
+> {%
+    client.test("User A has 2 categories", () => client.assert(response.body.length === 2));
+    client.test("Categories sorted by name", () => client.assert(response.body[0].name === "Food"));
+%}
+
+### Rename category
+PUT {{host}}/api/v1/finance/categories/{{foodId}}
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "name": "Groceries" }
+
+> {%
+    client.test("Category renamed", () => client.assert(response.status === 200));
+    client.test("New name returned", () => client.assert(response.body.name === "Groceries"));
+%}
+
+### Get categories of user B
+GET {{host}}/api/v1/finance/categories
+Authorization: Bearer {{tokenB}}
+
+> {% client.test("User B sees no foreign categories", () => client.assert(response.body.length === 0)); %}
+
+### User B renames category of user A
+PUT {{host}}/api/v1/finance/categories/{{foodId}}
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{ "name": "Hijacked" }
+
+> {% client.test("Foreign category not accessible", () => client.assert(response.status === 404)); %}
+
+### Create expense with category
+POST {{host}}/api/v1/finance/transactions
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "title": "Supermarket", "description": "Weekly shopping", "amount": 250.50, "type": "EXPENSE", "transactionDate": "2026-09-15", "categoryId": {{foodId}} }
+
+> {%
+    client.test("Expense created", () => client.assert(response.status === 200 || response.status === 201));
+    client.global.set("expenseId", response.body.id);
+%}
+
+### Create income with category
+POST {{host}}/api/v1/finance/transactions
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "title": "September salary", "amount": 8000.00, "type": "INCOME", "transactionDate": "2026-09-01", "categoryId": {{salaryId}} }
+
+> {%
+    client.test("Income created", () => client.assert(response.status === 200 || response.status === 201));
+    client.global.set("incomeId", response.body.id);
+%}
+
+### Create expense without category
+POST {{host}}/api/v1/finance/transactions
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "title": "Cinema", "amount": 45.00, "type": "EXPENSE", "transactionDate": "2026-08-20" }
+
+> {%
+    client.test("Expense without category created", () => client.assert(response.status === 200 || response.status === 201));
+    client.global.set("noCategoryId", response.body.id);
+%}
+
+### Create transaction with negative amount
+POST {{host}}/api/v1/finance/transactions
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "title": "Invalid", "amount": -10.00, "type": "EXPENSE", "transactionDate": "2026-09-10" }
+
+> {% client.test("Negative amount rejected", () => client.assert(response.status === 400)); %}
+
+### Create transaction without date and type
+POST {{host}}/api/v1/finance/transactions
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "title": "Invalid", "amount": 10.00 }
+
+> {% client.test("Missing date and type rejected", () => client.assert(response.status === 400)); %}
+
+### User B creates transaction with category of user A
+POST {{host}}/api/v1/finance/transactions
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{ "title": "Hijacked", "amount": 10.00, "type": "EXPENSE", "transactionDate": "2026-09-10", "categoryId": {{foodId}} }
+
+> {% client.test("Foreign category cannot be used", () => client.assert(response.status === 404)); %}
+
+### Get all transactions of user A
+GET {{host}}/api/v1/finance/transactions
+Authorization: Bearer {{tokenA}}
+
+> {%
+    client.test("User A has 3 transactions", () => client.assert(response.body.content.length === 3));
+    client.test("Newest transaction first", () => client.assert(response.body.content[0].title === "Supermarket"));
+%}
+
+### Filter by type
+GET {{host}}/api/v1/finance/transactions?type=EXPENSE
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Only expenses returned", () => client.assert(response.body.content.length === 2)); %}
+
+### Filter by date range
+GET {{host}}/api/v1/finance/transactions?transactionDateFrom=2026-09-01&transactionDateTo=2026-09-30
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Only September transactions returned", () => client.assert(response.body.content.length === 2)); %}
+
+### Filter by category
+GET {{host}}/api/v1/finance/transactions?categoryId={{foodId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Only Groceries transactions returned", () => client.assert(response.body.content.length === 1)); %}
+
+### Filter with combined conditions
+GET {{host}}/api/v1/finance/transactions?type=EXPENSE&transactionDateFrom=2026-09-01
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Only September expenses returned", () => client.assert(response.body.content.length === 1)); %}
+
+### Pagination
+GET {{host}}/api/v1/finance/transactions?page=0&size=2
+Authorization: Bearer {{tokenA}}
+
+> {%
+    client.test("Page size respected", () => client.assert(response.body.content.length === 2));
+    client.test("Total elements counted", () => client.assert(response.body.totalElements === 3));
+%}
+
+### Get transactions of user B
+GET {{host}}/api/v1/finance/transactions
+Authorization: Bearer {{tokenB}}
+
+> {% client.test("User B sees no foreign transactions", () => client.assert(response.body.content.length === 0)); %}
+
+### User B deletes transaction of user A
+DELETE {{host}}/api/v1/finance/transactions/{{expenseId}}
+Authorization: Bearer {{tokenB}}
+
+> {% client.test("Foreign transaction not deletable", () => client.assert(response.status === 403 || response.status === 404)); %}
+
+### Delete category Groceries
+DELETE {{host}}/api/v1/finance/categories/{{foodId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Category deleted", () => client.assert(response.status === 204)); %}
+
+### Transaction survives category deletion
+GET {{host}}/api/v1/finance/transactions?type=EXPENSE
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Expenses still exist", () => client.assert(response.body.content.length === 2)); %}
+
+### Delete expense
+DELETE {{host}}/api/v1/finance/transactions/{{expenseId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Expense deleted", () => client.assert(response.status === 200 || response.status === 204)); %}
+
+### Delete income
+DELETE {{host}}/api/v1/finance/transactions/{{incomeId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Income deleted", () => client.assert(response.status === 200 || response.status === 204)); %}
+
+### Delete expense without category
+DELETE {{host}}/api/v1/finance/transactions/{{noCategoryId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Expense without category deleted", () => client.assert(response.status === 200 || response.status === 204)); %}
+
+### Delete category Salary
+DELETE {{host}}/api/v1/finance/categories/{{salaryId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Category Salary deleted", () => client.assert(response.status === 204)); %}

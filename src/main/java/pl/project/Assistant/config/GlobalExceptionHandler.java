@@ -5,7 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 import pl.project.Assistant.exception.AccessDeniedException;
+import pl.project.Assistant.exception.ConflictException;
 import pl.project.Assistant.exception.ResourceNotFoundException;
 
 import java.util.HashMap;
@@ -34,7 +36,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleAccessDenied(AccessDeniedException ex){
         return ResponseEntity.status(403).body(ex.getMessage());
     }
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<String> handleConflict(ConflictException ex){
+        return ResponseEntity.status(409).body(ex.getMessage());
+    }
 }
+
+
 
 
 
