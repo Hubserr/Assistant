@@ -32,8 +32,9 @@ public class RecipeController {
     public Page<RecipeSummaryResponse> getRecipes(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Integer maxPrepTimeMinutes,
+            @RequestParam(required = false) RecipeAvailability availability,
             @ParameterObject @PageableDefault(sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
-        return recipeService.getRecipes(name, maxPrepTimeMinutes, pageable);
+        return recipeService.getRecipes(name, maxPrepTimeMinutes, availability, pageable);
     }
 
     @GetMapping("/{id}")

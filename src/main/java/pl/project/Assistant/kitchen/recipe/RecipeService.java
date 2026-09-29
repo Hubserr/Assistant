@@ -1,6 +1,7 @@
 package pl.project.Assistant.kitchen.recipe;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -22,8 +23,10 @@ import pl.project.Assistant.kitchen.recipe.dto.RecipeSummaryResponse;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class RecipeService {
@@ -57,7 +60,7 @@ public class RecipeService {
     }
 
     @Transactional(readOnly = true)
-    public Page<RecipeSummaryResponse> getRecipes(String name, Integer maxPrepTimeMinutes, Pageable pageable) {
+    public Page<RecipeSummaryResponse> getRecipes(String name, Integer maxPrepTimeMinutes, RecipeAvailability availability, Pageable pageable) {
         User user = currentUserProvider.getCurrentUser();
 
         Specification<Recipe> spec = (root, query, cb) -> cb.equal(root.get("owner"), user);
@@ -72,7 +75,19 @@ public class RecipeService {
         }
 
         Map<Long, BigDecimal> stock = fridgeService.getStockMap(user);
-        return recipeRepository.findAll(spec, pageable).map(recipe -> RecipeMapper.toSummary(recipe, stock));
+
+        if (availability == null) {
+            return recipeRepository.findAll(spec, pageable).map(recipe -> RecipeMapper.toSummary(recipe, stock));
+        }
+
+        List<RecipeSummaryResponse> filtered = recipeRepository.findAll(spec, pageable.getSort()).stream()
+                .map(recipe -> RecipeMapper.toSummary(recipe, stock))
+                .filter(summary -> summary.getAvailability() == availability)
+                .collect(Collectors.toList());
+
+        int from = (int) Math.min(pageable.getOffset(), filtered.size());
+        int to = Math.min(from + pageable.getPageSize(), filtered.size());
+        return new PageImpl<>(filtered.subList(from, to), pageable, filtered.size());
     }
 
     @Transactional(readOnly = true)
