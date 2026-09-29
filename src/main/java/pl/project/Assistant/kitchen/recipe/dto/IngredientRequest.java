@@ -1,10 +1,9 @@
 package pl.project.Assistant.kitchen.recipe.dto;
 
-import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+import pl.project.Assistant.kitchen.product.Unit;
 
 import java.math.BigDecimal;
 
@@ -13,8 +12,11 @@ import java.math.BigDecimal;
 public class IngredientRequest {
 
 
-    @NotNull
-    private Long productId;
+    @NotBlank
+    @Size(max=100)
+    private String productName;
+
+    private Unit unit;
 
     @NotNull
     @Positive

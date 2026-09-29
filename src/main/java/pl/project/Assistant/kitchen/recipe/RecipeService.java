@@ -10,6 +10,7 @@ import pl.project.Assistant.auth.User;
 import pl.project.Assistant.exception.BadRequestException;
 import pl.project.Assistant.exception.ResourceNotFoundException;
 import pl.project.Assistant.kitchen.dto.NutritionMapper;
+import pl.project.Assistant.kitchen.fridge.FridgeService;
 import pl.project.Assistant.kitchen.product.Product;
 import pl.project.Assistant.kitchen.product.ProductService;
 import pl.project.Assistant.kitchen.recipe.dto.IngredientRequest;
@@ -18,8 +19,10 @@ import pl.project.Assistant.kitchen.recipe.dto.RecipeRequest;
 import pl.project.Assistant.kitchen.recipe.dto.RecipeResponse;
 import pl.project.Assistant.kitchen.recipe.dto.RecipeSummaryResponse;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -28,13 +31,16 @@ public class RecipeService {
     private final RecipeRepository recipeRepository;
     private final CurrentUserProvider currentUserProvider;
     private final ProductService productService;
+    private final FridgeService fridgeService;
 
     public RecipeService(RecipeRepository recipeRepository,
                          CurrentUserProvider currentUserProvider,
-                         ProductService productService) {
+                         ProductService productService,
+                         FridgeService fridgeService) {
         this.recipeRepository = recipeRepository;
         this.currentUserProvider = currentUserProvider;
         this.productService = productService;
+        this.fridgeService = fridgeService;
     }
 
     @Transactional
@@ -45,7 +51,9 @@ public class RecipeService {
         recipe.setOwner(user);
         applyRequest(recipe, request, user);
 
-        return RecipeMapper.toResponse(recipeRepository.save(recipe));
+        Recipe saved = recipeRepository.save(recipe);
+        Map<Long, BigDecimal> stock = fridgeService.getStockMap(user);
+        return RecipeMapper.toResponse(saved, stock);
     }
 
     @Transactional(readOnly = true)
@@ -63,13 +71,16 @@ public class RecipeService {
                     cb.lessThanOrEqualTo(root.get("prepTimeMinutes"), maxPrepTimeMinutes));
         }
 
-        return recipeRepository.findAll(spec, pageable).map(RecipeMapper::toSummary);
+        Map<Long, BigDecimal> stock = fridgeService.getStockMap(user);
+        return recipeRepository.findAll(spec, pageable).map(recipe -> RecipeMapper.toSummary(recipe, stock));
     }
 
     @Transactional(readOnly = true)
     public RecipeResponse getRecipe(Long id) {
         User user = currentUserProvider.getCurrentUser();
-        return RecipeMapper.toResponse(findOwnedWithIngredients(id, user));
+        Recipe recipe = findOwnedWithIngredients(id, user);
+        Map<Long, BigDecimal> stock = fridgeService.getStockMap(user);
+        return RecipeMapper.toResponse(recipe, stock);
     }
 
     @Transactional
@@ -79,7 +90,8 @@ public class RecipeService {
 
         applyRequest(recipe, request, user);
 
-        return RecipeMapper.toResponse(recipe);
+        Map<Long, BigDecimal> stock = fridgeService.getStockMap(user);
+        return RecipeMapper.toResponse(recipe, stock);
     }
 
     @Transactional
@@ -111,14 +123,16 @@ public class RecipeService {
 
         new ArrayList<>(recipe.getIngredients()).forEach(recipe::deleteIngredient);
 
-        Set<Long> usedProductIds = new HashSet<>();
+        Set<String> usedNames = new HashSet<>();
         for (IngredientRequest ingredientRequest : request.getIngredients()) {
-            Long productId = ingredientRequest.getProductId();
-            if (!usedProductIds.add(productId)) {
-                throw new BadRequestException("Product " + productId + " is listed more than once");
+            String productName = ingredientRequest.getProductName().trim();
+            if (!usedNames.add(productName.toLowerCase())) {
+                throw new BadRequestException("Product " + productName + " is listed more than once");
             }
-            Product product = productService.getOwnedProduct(productId, user);
+            Product product = productService.findOrCreate(productName,ingredientRequest.getUnit(),user);
             recipe.addIngredient(new Ingredient(product, ingredientRequest.getAmount()));
         }
     }
+
+
 }

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.project.Assistant.auth.CurrentUserProvider;
 import pl.project.Assistant.auth.User;
+import pl.project.Assistant.exception.BadRequestException;
 import pl.project.Assistant.exception.ConflictException;
 import pl.project.Assistant.exception.ResourceNotFoundException;
 import pl.project.Assistant.kitchen.product.dto.ProductMapper;
@@ -12,6 +13,7 @@ import pl.project.Assistant.kitchen.product.dto.ProductResponse;
 import pl.project.Assistant.kitchen.recipe.RecipeRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,13 +46,16 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductResponse> getProducts(){
+    public List<ProductResponse> getProducts(String search){
         User user = currentUserProvider.getCurrentUser();
-
-        return productRepository.findAllByOwnerOrderByNameAsc(user).stream()
+        if(search==null) {
+            return productRepository.findAllByOwnerOrderByNameAsc(user).stream()
+                    .map(ProductMapper::toResponse)
+                    .collect(Collectors.toList());
+        }
+        return  productRepository.findTop15ByOwnerAndNameContainingIgnoreCaseOrderByNameAsc(user,search.trim()).stream()
                 .map(ProductMapper::toResponse)
                 .collect(Collectors.toList());
-
 
     }
     @Transactional
@@ -81,6 +86,28 @@ public class ProductService {
 
     public Product getOwnedProduct(Long id, User user){
         return productRepository.findByIdAndOwner(id,user).orElseThrow(()-> new ResourceNotFoundException("Product",id));
+    }
+
+    public Product findOrCreate(String name, Unit unit,User user){
+
+        Optional<Product> existing  = productRepository.findByOwnerAndNameIgnoreCase(user,name.trim());
+
+        if(existing.isPresent()){
+            Product product = existing.get();
+            if(unit!=null&&product.getUnit()!=unit) {
+                throw new BadRequestException("Product '" + product.getName() + "' is measured in " + product.getUnit());
+            }
+            return product;
+        }
+        if(unit==null){
+            throw  new BadRequestException("Unit is required for new product '" + name.trim() + "'");
+        }
+        Product product = new Product();
+        product.setName(name.trim());
+        product.setUnit(unit);
+        product.setOwner(user);
+        return  productRepository.save(product);
+
     }
 
 

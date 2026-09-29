@@ -13,7 +13,9 @@ import pl.project.Assistant.kitchen.fridge.dto.FridgeItemResponse;
 import pl.project.Assistant.kitchen.product.Product;
 import pl.project.Assistant.kitchen.product.ProductService;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,18 +34,8 @@ public class FridgeService {
     @Transactional
     public FridgeItemResponse addItemToFridge(FridgeItemRequest request){
         User user = currentUserProvider.getCurrentUser();
-        Product product = productService.getOwnedProduct(request.getProductId(),user);
-
-        FridgeItem item = fridgeRepository.findByOwnerAndProduct(user,product).orElse(null);
-        if(item!=null){
-            item.setAmount(item.getAmount().add(request.getAmount()));
-        } else {
-            item = new FridgeItem();
-            item.setProduct(product);
-            item.setAmount(request.getAmount());
-            item.setOwner(user);
-        }
-        return FridgeItemMapper.toResponse(fridgeRepository.save(item));
+        Product product = productService.findOrCreate(request.getProductName(),request.getUnit(),user);
+        return  FridgeItemMapper.toResponse(addOrIncrease(product,request.getAmount(),user));
 
 
 
@@ -61,7 +53,7 @@ public class FridgeService {
         User user = currentUserProvider.getCurrentUser();
         FridgeItem fridgeItem = fridgeRepository.findByIdAndOwner(id,user).orElseThrow(()-> new ResourceNotFoundException("Item",id));
 
-        Product product = productService.getOwnedProduct(request.getProductId(), user);
+        Product product = productService.findOrCreate(request.getProductName(),request.getUnit() ,user);
 
         fridgeRepository.findByOwnerAndProduct(user,product)
                 .filter(other -> !other.getId().equals(fridgeItem.getId()))
@@ -80,6 +72,45 @@ public class FridgeService {
         fridgeRepository.delete(fridgeItem);
 
     }
+    @Transactional(readOnly = true)
+    public Map<Long, BigDecimal> getStockMap(User user){
+        return fridgeRepository.findAllByOwnerOrderByProductNameAsc(user).stream()
+                .collect(Collectors.toMap(item->item.getProduct().getId(),FridgeItem::getAmount));
+    }
+    @Transactional
+    public FridgeItem addOrIncrease(Product product,BigDecimal amount,User user){
+
+        FridgeItem item = fridgeRepository.findByOwnerAndProduct(user,product).orElse(null);
+
+        if(item!=null){
+            item.setAmount(item.getAmount().add(amount));
+            return  item;
+        }
+        item = new FridgeItem();
+        item.setProduct(product);
+        item.setAmount(amount);
+        item.setOwner(user);
+        return  fridgeRepository.save(item);
+    }
+    @Transactional
+    public BigDecimal consume(Product product,BigDecimal amount,User user){
+        FridgeItem item = fridgeRepository.findByOwnerAndProduct(user,product).orElse(null);
+
+        if(item==null){
+            return BigDecimal.ZERO;
+        }
+        BigDecimal available = item.getAmount();
+        if(available.compareTo(amount)<=0){
+            fridgeRepository.delete(item);
+            return available;
+        }
+        item.setAmount(available.subtract(amount));
+        return amount;
+
+    }
+
+
+
 
 
 

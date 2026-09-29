@@ -13,6 +13,7 @@ import pl.project.Assistant.kitchen.shopping.dto.ShoppingListItemMapper;
 import pl.project.Assistant.kitchen.shopping.dto.ShoppingListItemRequest;
 import pl.project.Assistant.kitchen.shopping.dto.ShoppingListItemResponse;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,18 +34,9 @@ public class ShoppingListService {
     @Transactional
     public ShoppingListItemResponse addItemToShoppingList(ShoppingListItemRequest request){
         User user = currentUserProvider.getCurrentUser();
-        Product product = productService.getOwnedProduct(request.getProductId(), user);
+        Product product = productService.findOrCreate(request.getProductName(),request.getUnit(),user);
 
-        ShoppingListItem item = shoppingListRepository.findByOwnerAndProduct(user,product).orElse(null);
-        if(item!=null){
-            item.setAmount(item.getAmount().add(request.getAmount()));
-        } else {
-            item = new ShoppingListItem();
-            item.setProduct(product);
-            item.setAmount(request.getAmount());
-            item.setOwner(user);
-        }
-        return ShoppingListItemMapper.toResponse(shoppingListRepository.save(item));
+        return ShoppingListItemMapper.toResponse(addOrIncrease(product,request.getAmount(),user));
 
 
 
@@ -62,7 +54,7 @@ public class ShoppingListService {
     public ShoppingListItemResponse updateItemInShoppingList(Long id, ShoppingListItemRequest request){
         User user = currentUserProvider.getCurrentUser();
         ShoppingListItem item = shoppingListRepository.findByIdAndOwner(id,user).orElseThrow(()-> new ResourceNotFoundException("Item",id));
-        Product product = productService.getOwnedProduct(request.getProductId(), user);
+        Product product = productService.findOrCreate(request.getProductName(),request.getUnit(),user);
 
         shoppingListRepository.findByOwnerAndProduct(user,product)
                 .filter(other -> !other.getId().equals(item.getId()))
@@ -80,7 +72,21 @@ public class ShoppingListService {
         shoppingListRepository.delete(item);
 
     }
+    @Transactional
+    public ShoppingListItem addOrIncrease(Product product, BigDecimal amount, User user){
 
+        ShoppingListItem item = shoppingListRepository.findByOwnerAndProduct(user,product).orElse(null);
+
+        if(item!=null){
+            item.setAmount(item.getAmount().add(amount));
+            return  item;
+        }
+        item = new ShoppingListItem();
+        item.setProduct(product);
+        item.setAmount(amount);
+        item.setOwner(user);
+        return  shoppingListRepository.save(item);
+    }
 
 
 

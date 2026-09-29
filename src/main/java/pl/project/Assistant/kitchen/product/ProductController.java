@@ -25,8 +25,8 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<ProductResponse> getProducts(){
-        return  productService.getProducts();
+    public List<ProductResponse> getProducts(@RequestParam(required = false) String search){
+        return  productService.getProducts(search);
     }
 
     @PutMapping("/{id}")
