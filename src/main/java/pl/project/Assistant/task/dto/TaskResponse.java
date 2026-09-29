@@ -3,7 +3,6 @@ package pl.project.Assistant.task.dto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Data
 public class TaskResponse {
@@ -11,7 +10,7 @@ public class TaskResponse {
     private String title;
     private String description;
     private boolean completed;
-    private Date until;
+    private LocalDateTime until;
     private LocalDateTime createdAt;
 
 

@@ -50,7 +50,7 @@ public class TransactionService {
     }
     @Transactional(readOnly = true)
     public Page<TransactionResponse> getTransactions(
-            String title, Long categoryId, TransactionType type, LocalDate transactionDateFrom, LocalDate transactionDateTo, Pageable pageable)
+            Long categoryId, TransactionType type, LocalDate transactionDateFrom, LocalDate transactionDateTo, Pageable pageable)
     {
         User user = currentUserProvider.getCurrentUser();
 

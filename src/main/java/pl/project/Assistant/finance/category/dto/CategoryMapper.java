@@ -1,6 +1,5 @@
 package pl.project.Assistant.finance.category.dto;
 
-import lombok.NoArgsConstructor;
 import pl.project.Assistant.finance.category.Category;
 
 

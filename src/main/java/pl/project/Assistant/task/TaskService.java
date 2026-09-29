@@ -7,8 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.project.Assistant.auth.CurrentUserProvider;
 import pl.project.Assistant.auth.User;
-import pl.project.Assistant.exception.AccessDeniedException;
+import pl.project.Assistant.exception.BadRequestException;
 import pl.project.Assistant.exception.ResourceNotFoundException;
+
+import java.time.LocalDateTime;
 
 @Service
 public class TaskService {
@@ -28,7 +30,7 @@ public class TaskService {
 
         if(search!=null&&!search.isEmpty()){
             spec = spec.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.like(root.get("title"), "%" + search.toLowerCase()+"%"));
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), "%" + search.toLowerCase()+"%"));
         }
         if(completed!=null){
             spec = spec.and((root, query, criteriaBuilder) ->
@@ -39,11 +41,7 @@ public class TaskService {
     @Transactional
     public Task updateTask(Long id,Task updatedTask){
         User user = currentUserProvider.getCurrentUser();
-        Task task = taskRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Task",id));
-
-        if(!task.getOwner().equals(user)){
-            throw new AccessDeniedException("Access denied!");
-        }
+        Task task = taskRepository.findByIdAndOwner(id,user).orElseThrow(()->new ResourceNotFoundException("Task",id));
 
         task.setTitle(updatedTask.getTitle());
         task.setCompleted(updatedTask.isCompleted());
@@ -55,16 +53,16 @@ public class TaskService {
 
     public Task addTask(Task task){
         User user = currentUserProvider.getCurrentUser();
+        if(task.getUntil()!=null && !task.getUntil().isAfter(LocalDateTime.now())){
+            throw new BadRequestException("Deadline must be in the future");
+        }
         task.setOwner(user);
         return taskRepository.save(task);
     }
 
     public void removeTask(Long id){
         User user = currentUserProvider.getCurrentUser();
-        Task task = taskRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Task",id));
-        if(!task.getOwner().equals(user)) {
-            throw new AccessDeniedException("Access denied!");
-        }
+        taskRepository.findByIdAndOwner(id,user).orElseThrow(()->new ResourceNotFoundException("Task",id));
         taskRepository.deleteById(id);
     }
 }

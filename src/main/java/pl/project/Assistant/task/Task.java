@@ -1,14 +1,12 @@
 package pl.project.Assistant.task;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.project.Assistant.auth.User;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Getter
@@ -22,7 +20,7 @@ public class Task {
     private String title;
     private String description;
     private boolean completed;
-    private Date until;
+    private LocalDateTime until;
     @ManyToOne
     @JoinColumn(name= "user_id")
     private User owner;

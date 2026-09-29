@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pl.project.Assistant.finance.transaction.dto.TransactionRequest;
 import pl.project.Assistant.finance.transaction.dto.TransactionResponse;
@@ -27,17 +28,17 @@ public class TransactionController {
 
     @GetMapping
     public Page<TransactionResponse> getTransactions(
-            @RequestParam(required = false) String title,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false)  TransactionType type,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @ParameterObject @PageableDefault(sort = "transactionDate",direction =  Sort.Direction.DESC) Pageable pageable)
     {
-        return transactionService.getTransactions(title,categoryId,type,dateFrom,dateTo,pageable);
+        return transactionService.getTransactions(categoryId,type,dateFrom,dateTo,pageable);
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public TransactionResponse addTransaction(@Valid @RequestBody TransactionRequest request){
     return  transactionService.addTransaction(request);    
     }
@@ -47,6 +48,7 @@ public class TransactionController {
         return  transactionService.updateTransaction(id,request);
     }
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTransaction(@PathVariable Long id){
         transactionService.delete(id);
     }

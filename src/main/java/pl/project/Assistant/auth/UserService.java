@@ -3,6 +3,9 @@ package pl.project.Assistant.auth;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pl.project.Assistant.config.JwtService;
+import pl.project.Assistant.exception.BadRequestException;
+import pl.project.Assistant.exception.ConflictException;
+import pl.project.Assistant.exception.UnauthorizedException;
 
 
 @Service
@@ -20,10 +23,10 @@ public class UserService {
     public AuthResponse register(RegisterRequest request){
 
         if(repository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exist");
+            throw new ConflictException("Email already exist");
         }
         if(!request.getPassword().equals(request.getConfirmPassword())){
-            throw new RuntimeException("Passwords do not match");
+            throw new BadRequestException("Passwords do not match");
         }
         User user = new User();
         user.setEmail(request.getEmail());
@@ -45,11 +48,11 @@ public class UserService {
     public AuthResponse login(LoginRequest request){
 
         User user = repository.findByEmail(request.getEmail())
-                .orElseThrow(()->new RuntimeException("Login or password incorrect"));
+                .orElseThrow(()->new UnauthorizedException("Login or password incorrect"));
 
         AuthResponse response = new AuthResponse();
         if(!encoder.matches(request.getPassword(),user.getPassword())){
-            throw new RuntimeException("Login or password incorrect");
+            throw new UnauthorizedException("Login or password incorrect");
         }
         response.setEmail(request.getEmail());
         response.setRole(user.getRole().name());

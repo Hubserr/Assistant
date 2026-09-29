@@ -1,14 +1,18 @@
 package pl.project.Assistant.config;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpClientErrorException;
-import pl.project.Assistant.exception.AccessDeniedException;
+import pl.project.Assistant.exception.BadRequestException;
 import pl.project.Assistant.exception.ConflictException;
+import pl.project.Assistant.exception.ForbiddenException;
 import pl.project.Assistant.exception.ResourceNotFoundException;
+import pl.project.Assistant.exception.UnauthorizedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +20,8 @@ import java.util.Map;
 @RestControllerAdvice
 
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
     Map<String, String> errors = new HashMap<>();
@@ -26,24 +32,31 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleUnexceptedRuntimeException(RuntimeException ex) {
-        return ResponseEntity.status(500).body(ex.getMessage());
+        log.error("Unexpected error", ex);
+        return ResponseEntity.status(500).body("Internal server error");
     }
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<String> handleResourceNotFound(ResourceNotFoundException ex){
         return ResponseEntity.status(404).body(ex.getMessage());
     }
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<String> handleAccessDenied(AccessDeniedException ex){
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<String> handleForbidden(ForbiddenException ex){
         return ResponseEntity.status(403).body(ex.getMessage());
     }
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<String> handleConflict(ConflictException ex){
         return ResponseEntity.status(409).body(ex.getMessage());
     }
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<String> handleBadRequest(BadRequestException ex){
+        return ResponseEntity.status(400).body(ex.getMessage());
+    }
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<String> handleUnauthorized(UnauthorizedException ex){
+        return ResponseEntity.status(401).body(ex.getMessage());
+    }
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<String> handleDataIntegrityViolation(DataIntegrityViolationException ex){
+        return ResponseEntity.status(409).body("Data integrity violation");
+    }
 }
-
-
-
-
-
-

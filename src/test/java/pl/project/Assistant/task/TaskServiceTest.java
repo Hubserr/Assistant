@@ -13,7 +13,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import pl.project.Assistant.auth.CurrentUserProvider;
 import pl.project.Assistant.auth.User;
 import pl.project.Assistant.auth.UserRepository;
-import pl.project.Assistant.exception.AccessDeniedException;
 import pl.project.Assistant.exception.ResourceNotFoundException;
 import java.util.Optional;
 
@@ -68,7 +67,7 @@ public class TaskServiceTest {
         updatedTask.setDescription("Description");
 
         when(currentUserProvider.getCurrentUser()).thenReturn(user);
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.findByIdAndOwner(1L, user)).thenReturn(Optional.of(existingTask));
         when(taskRepository.save(existingTask)).thenReturn(existingTask);
 
         Task result = taskService.updateTask(1L, updatedTask);
@@ -91,13 +90,13 @@ public class TaskServiceTest {
         updatedTask.setDescription("Description");
 
         when(currentUserProvider.getCurrentUser()).thenReturn(user);
-        when(taskRepository.findById(999L)).thenReturn(Optional.empty());
+        when(taskRepository.findByIdAndOwner(999L, user)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> taskService.updateTask(999L,updatedTask) );
     }
 
     @Test
-    void updateTask_accesDenied() {
+    void updateTask_foreignTaskNotFound() {
         User user = new User();
         User user2 = new User();
         user.setEmail(TEST_EMAIL);
@@ -113,9 +112,9 @@ public class TaskServiceTest {
         updatedTask.setDescription("Description");
 
         when(currentUserProvider.getCurrentUser()).thenReturn(user);
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.findByIdAndOwner(1L, user)).thenReturn(Optional.empty());
 
-        assertThrows(AccessDeniedException.class, () -> taskService.updateTask(1L,updatedTask));
+        assertThrows(ResourceNotFoundException.class, () -> taskService.updateTask(1L,updatedTask));
         verify(taskRepository,never()).save(any());
 
     }
@@ -130,7 +129,7 @@ public class TaskServiceTest {
         existingTask.setTitle("Title");
 
         when(currentUserProvider.getCurrentUser()).thenReturn(user);
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.findByIdAndOwner(1L, user)).thenReturn(Optional.of(existingTask));
 
         taskService.removeTask(1L);
 
@@ -144,13 +143,13 @@ public class TaskServiceTest {
         user.setEmail(TEST_EMAIL);
 
         when(currentUserProvider.getCurrentUser()).thenReturn(user);
-        when(taskRepository.findById(999L)).thenReturn(Optional.empty());
+        when(taskRepository.findByIdAndOwner(999L, user)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, ()->taskService.removeTask(999L));
 
     }
     @Test
-    void removeTask_accesDenied() {
+    void removeTask_foreignTaskNotFound() {
         User user = new User();
         User user2 = new User();
         user.setEmail(TEST_EMAIL);
@@ -161,10 +160,10 @@ public class TaskServiceTest {
         existingTask.setTitle("Title");
 
         when(currentUserProvider.getCurrentUser()).thenReturn(user);
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.findByIdAndOwner(1L, user)).thenReturn(Optional.empty());
 
-        assertThrows(AccessDeniedException.class, () -> taskService.removeTask(1L));
-        verify(taskRepository,never()).save(any());
+        assertThrows(ResourceNotFoundException.class, () -> taskService.removeTask(1L));
+        verify(taskRepository,never()).deleteById(any());
 
     }
 

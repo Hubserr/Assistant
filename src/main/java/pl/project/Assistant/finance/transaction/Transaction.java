@@ -25,8 +25,9 @@ public class Transaction {
     @Column(nullable = false)
     private String title;
     private String description;
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
+    @Column(nullable = false)
     private LocalDate transactionDate;
     private LocalDateTime creationDate;
 
@@ -35,11 +36,12 @@ public class Transaction {
     private Category category;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TransactionType type;
 
 
     @JoinColumn(name = "user_id")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private User owner;
 
     @PrePersist

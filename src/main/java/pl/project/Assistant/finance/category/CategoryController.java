@@ -2,6 +2,7 @@ package pl.project.Assistant.finance.category;
 
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pl.project.Assistant.finance.category.dto.CategoryRequest;
 import pl.project.Assistant.finance.category.dto.CategoryResponse;
@@ -24,6 +25,7 @@ public class CategoryController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public CategoryResponse add(@Valid @RequestBody CategoryRequest request){
         return categoryService.addCategory(request);
     }
@@ -33,6 +35,7 @@ public class CategoryController {
         return categoryService.updateCategory(id,request);
     }
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id){
         categoryService.deleteCategory(id);
     }
