@@ -5,6 +5,8 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.project.Assistant.auth.CurrentUserProvider;
 import pl.project.Assistant.auth.User;
 import pl.project.Assistant.exception.ResourceNotFoundException;
+import pl.project.Assistant.kitchen.cooking.dto.CookResponse;
+import pl.project.Assistant.kitchen.cooking.dto.ShortageResponse;
 import pl.project.Assistant.kitchen.fridge.FridgeService;
 import pl.project.Assistant.kitchen.recipe.AvailabilityCalculator;
 import pl.project.Assistant.kitchen.recipe.Ingredient;
@@ -15,6 +17,7 @@ import pl.project.Assistant.kitchen.shopping.ShoppingListService;
 import pl.project.Assistant.kitchen.shopping.dto.ShoppingListItemResponse;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +54,29 @@ public class CookingService {
         }
 
         return shoppingListService.getShoppingList();
+    }
+
+    @Transactional
+    public CookResponse cook(Long recipeId) {
+        User user = currentUserProvider.getCurrentUser();
+        Recipe recipe = findOwnedWithIngredients(recipeId, user);
+
+        List<ShortageResponse> shortages = new ArrayList<>();
+        for (Ingredient ingredient : recipe.getIngredients()) {
+            BigDecimal consumed = fridgeService.consume(ingredient.getProduct(), ingredient.getAmount(), user);
+            if (consumed.compareTo(ingredient.getAmount()) < 0) {
+                ShortageResponse shortage = new ShortageResponse();
+                shortage.setProductName(ingredient.getProduct().getName());
+                shortage.setUnit(ingredient.getProduct().getUnit());
+                shortage.setMissingAmount(ingredient.getAmount().subtract(consumed));
+                shortages.add(shortage);
+            }
+        }
+
+        CookResponse response = new CookResponse();
+        response.setFridge(fridgeService.getItemsInFridge());
+        response.setShortages(shortages);
+        return response;
     }
 
     private Recipe findOwnedWithIngredients(Long id, User user) {

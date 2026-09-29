@@ -1,6 +1,7 @@
 package pl.project.Assistant.kitchen.cooking;
 
 import org.springframework.web.bind.annotation.*;
+import pl.project.Assistant.kitchen.cooking.dto.CookResponse;
 import pl.project.Assistant.kitchen.shopping.dto.ShoppingListItemResponse;
 
 import java.util.List;
@@ -18,5 +19,10 @@ public class CookingController {
     @PostMapping("/{id}/missing-to-shopping-list")
     public List<ShoppingListItemResponse> addMissingToShoppingList(@PathVariable Long id) {
         return cookingService.addMissingToShoppingList(id);
+    }
+
+    @PostMapping("/{id}/cook")
+    public CookResponse cook(@PathVariable Long id) {
+        return cookingService.cook(id);
     }
 }
