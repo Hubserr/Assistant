@@ -134,7 +134,7 @@ POST {{host}}/api/v1/kitchen/fridge
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{milkId}}, "amount": 500 }
+{ "productName": "Milk", "amount": 500 }
 
 > {%
     client.test("Fridge item created", () => client.assert(response.status === 201));
@@ -146,7 +146,7 @@ POST {{host}}/api/v1/kitchen/fridge
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{milkId}}, "amount": 250 }
+{ "productName": "milk", "amount": 250 }
 
 > {%
     client.test("Existing fridge item reused", () => client.assert(response.body.id === client.global.get("fridgeMilkId")));
@@ -158,7 +158,7 @@ POST {{host}}/api/v1/kitchen/fridge
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{eggsId}}, "amount": 6 }
+{ "productName": "Eggs", "amount": 6 }
 
 > {%
     client.test("Fridge item Eggs created", () => client.assert(response.status === 201));
@@ -170,7 +170,7 @@ POST {{host}}/api/v1/kitchen/fridge
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{eggsId}}, "amount": -1 }
+{ "productName": "Eggs", "amount": -1 }
 
 > {% client.test("Negative amount rejected", () => client.assert(response.status === 400)); %}
 
@@ -189,7 +189,7 @@ PUT {{host}}/api/v1/kitchen/fridge/{{fridgeEggsId}}
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{milkId}}, "amount": 6 }
+{ "productName": "Milk", "amount": 6 }
 
 > {% client.test("Duplicate product in fridge rejected", () => client.assert(response.status === 409)); %}
 
@@ -198,7 +198,7 @@ PUT {{host}}/api/v1/kitchen/fridge/{{fridgeEggsId}}
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{eggsId}}, "amount": 10 }
+{ "productName": "Eggs", "amount": 10 }
 
 > {%
     client.test("Fridge item updated", () => client.assert(response.status === 200));
@@ -210,7 +210,7 @@ POST {{host}}/api/v1/kitchen/shopping-list
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{flourId}}, "amount": 1000 }
+{ "productName": "Flour", "amount": 1000 }
 
 > {%
     client.test("Shopping list item created", () => client.assert(response.status === 201));
@@ -222,7 +222,7 @@ POST {{host}}/api/v1/kitchen/shopping-list
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{flourId}}, "amount": 500 }
+{ "productName": "flour", "amount": 500 }
 
 > {%
     client.test("Existing shopping list item reused", () => client.assert(response.body.id === client.global.get("shoppingFlourId")));
@@ -234,7 +234,7 @@ POST {{host}}/api/v1/kitchen/shopping-list
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{butterId}}, "amount": 200 }
+{ "productName": "Unsalted butter", "amount": 200 }
 
 > {%
     client.test("Shopping list item Butter created", () => client.assert(response.status === 201));
@@ -255,7 +255,7 @@ PUT {{host}}/api/v1/kitchen/shopping-list/{{shoppingButterId}}
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{flourId}}, "amount": 200 }
+{ "productName": "Flour", "amount": 200 }
 
 > {% client.test("Duplicate product on shopping list rejected", () => client.assert(response.status === 409)); %}
 
@@ -264,7 +264,7 @@ PUT {{host}}/api/v1/kitchen/shopping-list/{{shoppingButterId}}
 Authorization: Bearer {{tokenA}}
 Content-Type: application/json
 
-{ "productId": {{butterId}}, "amount": 250 }
+{ "productName": "Unsalted butter", "amount": 250 }
 
 > {%
     client.test("Shopping list item updated", () => client.assert(response.status === 200));
@@ -284,9 +284,9 @@ Content-Type: application/json
   "nutrition": { "calories": 450, "protein": 15.5, "fat": 12.0, "carbs": 60.0 },
   "steps": ["Mix flour with eggs", "Add milk and whisk", "Fry on a hot pan"],
   "ingredients": [
-    { "productId": {{flourId}}, "amount": 200 },
-    { "productId": {{eggsId}}, "amount": 2 },
-    { "productId": {{milkId}}, "amount": 300 }
+    { "productName": "Flour", "amount": 200 },
+    { "productName": "Eggs", "amount": 2 },
+    { "productName": "Milk", "amount": 300 }
   ]
 }
 
@@ -306,8 +306,8 @@ Content-Type: application/json
   "servings": 1,
   "steps": ["Mix"],
   "ingredients": [
-    { "productId": {{milkId}}, "amount": 100 },
-    { "productId": {{milkId}}, "amount": 200 }
+    { "productName": "Milk", "amount": 100 },
+    { "productName": " milk ", "amount": 200 }
   ]
 }
 
@@ -360,8 +360,8 @@ Content-Type: application/json
   "prepTimeMinutes": 25,
   "steps": ["Mix everything", "Fry"],
   "ingredients": [
-    { "productId": {{flourId}}, "amount": 400 },
-    { "productId": {{milkId}}, "amount": 600 }
+    { "productName": "Flour", "amount": 400 },
+    { "productName": "Milk", "amount": 600 }
   ]
 }
 
@@ -408,21 +408,21 @@ Authorization: Bearer {{tokenB}}
 
 > {% client.test("Foreign recipe not accessible", () => client.assert(response.status === 404)); %}
 
-### User B adds product of user A to fridge
+### User B adds product of user A to fridge (by name, without unit)
 POST {{host}}/api/v1/kitchen/fridge
 Authorization: Bearer {{tokenB}}
 Content-Type: application/json
 
-{ "productId": {{milkId}}, "amount": 100 }
+{ "productName": "Milk", "amount": 100 }
 
-> {% client.test("Foreign product cannot be used", () => client.assert(response.status === 404)); %}
+> {% client.test("Foreign product not visible, unit required for new product", () => client.assert(response.status === 400)); %}
 
 ### User B updates fridge item of user A
 PUT {{host}}/api/v1/kitchen/fridge/{{fridgeMilkId}}
 Authorization: Bearer {{tokenB}}
 Content-Type: application/json
 
-{ "productId": {{milkId}}, "amount": 1 }
+{ "productName": "Milk", "amount": 1 }
 
 > {% client.test("Foreign fridge item not accessible", () => client.assert(response.status === 404)); %}
 
@@ -497,3 +497,456 @@ GET {{host}}/api/v1/kitchen/products
 Authorization: Bearer {{tokenA}}
 
 > {% client.test("User A has no products", () => client.assert(response.body.length === 0)); %}
+
+
+########## Error handling ##########
+
+### Malformed request body
+POST {{host}}/api/v1/kitchen/fridge
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "productName": "mleko", "amount":
+
+> {% client.test("Malformed body returns 400", () => client.assert(response.status === 400)); %}
+
+### Invalid enum value in query parameter
+GET {{host}}/api/v1/kitchen/recipes?availability=SOMETIMES
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Invalid parameter value returns 400", () => client.assert(response.status === 400)); %}
+
+########## Products created by name ##########
+
+### Add "mleko" 1000 ML to fridge
+POST {{host}}/api/v1/kitchen/fridge
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "productName": "mleko", "unit": "ML", "amount": 1000 }
+
+> {%
+    client.test("Fridge item mleko created", () => client.assert(response.status === 201));
+    client.test("Amount 1000", () => client.assert(response.body.amount === 1000));
+    client.global.set("fridgeMlekoId", response.body.id);
+    client.global.set("mlekoProductId", response.body.productId);
+%}
+
+### Add "Mleko" 500 without unit
+POST {{host}}/api/v1/kitchen/fridge
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "productName": "Mleko", "amount": 500 }
+
+> {%
+    client.test("Existing product matched case-insensitively", () => client.assert(response.body.productId === client.global.get("mlekoProductId")));
+    client.test("Same fridge item reused", () => client.assert(response.body.id === client.global.get("fridgeMlekoId")));
+    client.test("Amounts summed to 1500", () => client.assert(response.body.amount === 1500));
+    client.test("Unit inherited from product", () => client.assert(response.body.unit === "ML"));
+%}
+
+### Fridge has a single mleko item
+GET {{host}}/api/v1/kitchen/fridge
+Authorization: Bearer {{tokenA}}
+
+> {%
+    const items = response.body.filter(i => i.productName.toLowerCase() === "mleko");
+    client.test("Exactly one mleko item", () => client.assert(items.length === 1));
+    client.test("Mleko amount 1500", () => client.assert(items[0].amount === 1500));
+%}
+
+### No duplicate mleko product
+GET {{host}}/api/v1/kitchen/products
+Authorization: Bearer {{tokenA}}
+
+> {%
+    const products = response.body.filter(p => p.productName.toLowerCase() === "mleko");
+    client.test("Exactly one mleko product", () => client.assert(products.length === 1));
+%}
+
+### Add "mleko" with wrong unit
+POST {{host}}/api/v1/kitchen/fridge
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "productName": "mleko", "unit": "G", "amount": 100 }
+
+> {% client.test("Unit mismatch rejected", () => client.assert(response.status === 400)); %}
+
+### Add new product without unit
+POST {{host}}/api/v1/kitchen/fridge
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "productName": "Nieznany produkt", "amount": 1 }
+
+> {% client.test("New product without unit rejected", () => client.assert(response.status === 400)); %}
+
+### Product without unit was not created
+GET {{host}}/api/v1/kitchen/products?search=nieznany
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("No product created", () => client.assert(response.body.length === 0)); %}
+
+### Search products
+GET {{host}}/api/v1/kitchen/products?search=mle
+Authorization: Bearer {{tokenA}}
+
+> {%
+    client.test("Search returns 200", () => client.assert(response.status === 200));
+    client.test("Search finds mleko", () => client.assert(response.body.length === 1 && response.body[0].productName === "mleko"));
+%}
+
+########## Recipe availability ##########
+
+### Add "jajka" 2 PCS to fridge
+POST {{host}}/api/v1/kitchen/fridge
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "productName": "jajka", "unit": "PCS", "amount": 2 }
+
+> {%
+    client.test("Fridge item jajka created", () => client.assert(response.status === 201));
+    client.global.set("jajkaProductId", response.body.productId);
+%}
+
+### Create recipe Nalesniki (mleko available, jajka insufficient, maka missing)
+POST {{host}}/api/v1/kitchen/recipes
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "name": "Nalesniki",
+  "servings": 2,
+  "prepTimeMinutes": 30,
+  "steps": ["Wymieszaj", "Usmaz"],
+  "ingredients": [
+    { "productName": "mleko", "amount": 500 },
+    { "productName": "Jajka", "amount": 3 },
+    { "productName": "maka", "unit": "G", "amount": 250 }
+  ]
+}
+
+> {%
+    client.test("Recipe Nalesniki created", () => client.assert(response.status === 201));
+    const maka = response.body.ingredients.find(i => i.productName === "maka");
+    client.test("Statuses returned on create", () => client.assert(maka.availability === "MISSING"));
+    client.global.set("recipeNalesnikiId", response.body.id);
+    client.global.set("makaProductId", maka.productId);
+%}
+
+### Create recipe Kakao (everything available)
+POST {{host}}/api/v1/kitchen/recipes
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{
+  "name": "Kakao",
+  "servings": 1,
+  "steps": ["Podgrzej mleko"],
+  "ingredients": [
+    { "productName": "mleko", "amount": 250 }
+  ]
+}
+
+> {%
+    client.test("Recipe Kakao created", () => client.assert(response.status === 201));
+    client.global.set("recipeKakaoId", response.body.id);
+%}
+
+### Get Nalesniki with ingredient statuses
+GET {{host}}/api/v1/kitchen/recipes/{{recipeNalesnikiId}}
+Authorization: Bearer {{tokenA}}
+
+> {%
+    const byName = n => response.body.ingredients.find(i => i.productName === n);
+    client.test("mleko AVAILABLE", () => client.assert(byName("mleko").availability === "AVAILABLE"));
+    client.test("mleko availableAmount 1500", () => client.assert(byName("mleko").availableAmount === 1500));
+    client.test("jajka INSUFFICIENT", () => client.assert(byName("jajka").availability === "INSUFFICIENT"));
+    client.test("jajka availableAmount 2", () => client.assert(byName("jajka").availableAmount === 2));
+    client.test("maka MISSING", () => client.assert(byName("maka").availability === "MISSING"));
+    client.test("maka availableAmount 0", () => client.assert(byName("maka").availableAmount === 0));
+%}
+
+### Recipe list shows missing ingredients
+GET {{host}}/api/v1/kitchen/recipes?name=Nalesniki
+Authorization: Bearer {{tokenA}}
+
+> {%
+    const r = response.body.content[0];
+    client.test("Availability MISSING_INGREDIENTS", () => client.assert(r.availability === "MISSING_INGREDIENTS"));
+    client.test("Two ingredients missing", () => client.assert(r.missingIngredientsCount === 2));
+%}
+
+### Filter recipes: READY
+GET {{host}}/api/v1/kitchen/recipes?availability=READY
+Authorization: Bearer {{tokenA}}
+
+> {%
+    const names = response.body.content.map(r => r.name);
+    client.test("Only Kakao is ready", () => client.assert(names.length === 1 && names[0] === "Kakao"));
+%}
+
+### Filter recipes: MISSING_INGREDIENTS
+GET {{host}}/api/v1/kitchen/recipes?availability=MISSING_INGREDIENTS
+Authorization: Bearer {{tokenA}}
+
+> {%
+    const names = response.body.content.map(r => r.name);
+    client.test("Only Nalesniki miss ingredients", () => client.assert(names.length === 1 && names[0] === "Nalesniki"));
+%}
+
+### Filter recipes: MISSING_INGREDIENTS, second page is empty
+GET {{host}}/api/v1/kitchen/recipes?availability=MISSING_INGREDIENTS&page=1&size=1
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Manual paging slices the filtered list", () => client.assert(response.status === 200 && response.body.content.length === 0)); %}
+
+### Recipes without availability filter
+GET {{host}}/api/v1/kitchen/recipes
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Both recipes returned", () => client.assert(response.body.content.length === 2)); %}
+
+########## Missing ingredients to shopping list ##########
+
+### Add missing ingredients of Nalesniki to shopping list
+POST {{host}}/api/v1/kitchen/recipes/{{recipeNalesnikiId}}/missing-to-shopping-list
+Authorization: Bearer {{tokenA}}
+
+> {%
+    const byName = n => response.body.find(i => i.productName === n);
+    client.test("Returns 200", () => client.assert(response.status === 200));
+    client.test("Two items on the list", () => client.assert(response.body.length === 2));
+    client.test("jajka difference 1", () => client.assert(byName("jajka").amount === 1));
+    client.test("maka difference 250", () => client.assert(byName("maka").amount === 250));
+    client.test("mleko not added", () => client.assert(byName("mleko") === undefined));
+    client.global.set("shopJajkaId", byName("jajka").id);
+    client.global.set("shopMakaId", byName("maka").id);
+%}
+
+### Ready recipe leaves shopping list unchanged
+POST {{host}}/api/v1/kitchen/recipes/{{recipeKakaoId}}/missing-to-shopping-list
+Authorization: Bearer {{tokenA}}
+
+> {%
+    client.test("Returns 200", () => client.assert(response.status === 200));
+    client.test("Still two items", () => client.assert(response.body.length === 2));
+%}
+
+########## Checkout ##########
+
+### Add cukier to shopping list
+POST {{host}}/api/v1/kitchen/shopping-list
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "productName": "cukier", "unit": "G", "amount": 100 }
+
+> {%
+    client.test("Shopping item cukier created", () => client.assert(response.status === 201));
+    client.global.set("shopCukierId", response.body.id);
+    client.global.set("cukierProductId", response.body.productId);
+%}
+
+### Checkout with repeated id
+POST {{host}}/api/v1/kitchen/shopping-list/checkout
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "items": [ { "id": {{shopJajkaId}} }, { "id": {{shopJajkaId}}, "amount": 5 } ] }
+
+> {% client.test("Repeated id rejected", () => client.assert(response.status === 400)); %}
+
+### Checkout with empty list
+POST {{host}}/api/v1/kitchen/shopping-list/checkout
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "items": [] }
+
+> {% client.test("Empty checkout rejected", () => client.assert(response.status === 400)); %}
+
+### Shopping list untouched after rejected checkouts
+GET {{host}}/api/v1/kitchen/shopping-list
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Still three items", () => client.assert(response.body.length === 3)); %}
+
+### Checkout jajka (list amount) and maka (bought less), skip cukier
+POST {{host}}/api/v1/kitchen/shopping-list/checkout
+Authorization: Bearer {{tokenA}}
+Content-Type: application/json
+
+{ "items": [ { "id": {{shopJajkaId}} }, { "id": {{shopMakaId}}, "amount": 200 } ] }
+
+> {%
+    const byName = n => response.body.find(i => i.productName === n);
+    client.test("Checkout returns 200", () => client.assert(response.status === 200));
+    client.test("jajka summed 2 + 1 = 3", () => client.assert(byName("jajka").amount === 3));
+    client.test("maka uses bought amount 200", () => client.assert(byName("maka").amount === 200));
+    client.test("mleko untouched", () => client.assert(byName("mleko").amount === 1500));
+    client.test("cukier not in fridge", () => client.assert(byName("cukier") === undefined));
+%}
+
+### Skipped item stays on shopping list
+GET {{host}}/api/v1/kitchen/shopping-list
+Authorization: Bearer {{tokenA}}
+
+> {%
+    client.test("Only cukier left", () => client.assert(response.body.length === 1 && response.body[0].productName === "cukier"));
+    client.test("cukier amount unchanged", () => client.assert(response.body[0].amount === 100));
+%}
+
+########## Isolation ##########
+
+### User B gets recipe of user A
+GET {{host}}/api/v1/kitchen/recipes/{{recipeNalesnikiId}}
+Authorization: Bearer {{tokenB}}
+
+> {% client.test("Foreign recipe not visible", () => client.assert(response.status === 404)); %}
+
+### User B lists recipes
+GET {{host}}/api/v1/kitchen/recipes
+Authorization: Bearer {{tokenB}}
+
+> {% client.test("User B sees no foreign recipes", () => client.assert(response.body.content.length === 0)); %}
+
+### User B cooks recipe of user A
+POST {{host}}/api/v1/kitchen/recipes/{{recipeNalesnikiId}}/cook
+Authorization: Bearer {{tokenB}}
+
+> {% client.test("Foreign recipe cannot be cooked", () => client.assert(response.status === 404)); %}
+
+### User B adds missing ingredients of user A recipe
+POST {{host}}/api/v1/kitchen/recipes/{{recipeNalesnikiId}}/missing-to-shopping-list
+Authorization: Bearer {{tokenB}}
+
+> {% client.test("Foreign recipe not accessible", () => client.assert(response.status === 404)); %}
+
+### User B checks out shopping item of user A
+POST {{host}}/api/v1/kitchen/shopping-list/checkout
+Authorization: Bearer {{tokenB}}
+Content-Type: application/json
+
+{ "items": [ { "id": {{shopCukierId}} } ] }
+
+> {% client.test("Foreign shopping item not accessible", () => client.assert(response.status === 404)); %}
+
+### Fridge of user A untouched by user B
+GET {{host}}/api/v1/kitchen/fridge
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("User A still has 3 fridge items", () => client.assert(response.body.length === 3)); %}
+
+########## Cook ##########
+
+### Cook Nalesniki (maka insufficient)
+POST {{host}}/api/v1/kitchen/recipes/{{recipeNalesnikiId}}/cook
+Authorization: Bearer {{tokenA}}
+
+> {%
+    const byName = n => response.body.fridge.find(i => i.productName === n);
+    client.test("Cook succeeds", () => client.assert(response.status === 200));
+    client.test("mleko reduced to 1000", () => client.assert(byName("mleko").amount === 1000));
+    client.test("jajka used up and removed", () => client.assert(byName("jajka") === undefined));
+    client.test("maka used up and removed", () => client.assert(byName("maka") === undefined));
+    client.test("One shortage", () => client.assert(response.body.shortages.length === 1));
+    client.test("maka short by 50 G", () => {
+        const s = response.body.shortages[0];
+        client.assert(s.productName === "maka" && s.unit === "G" && s.missingAmount === 50);
+    });
+%}
+
+### Cook Nalesniki again (jajka and maka missing)
+POST {{host}}/api/v1/kitchen/recipes/{{recipeNalesnikiId}}/cook
+Authorization: Bearer {{tokenA}}
+
+> {%
+    const byName = n => response.body.shortages.find(s => s.productName === n);
+    client.test("Cook is never blocked", () => client.assert(response.status === 200));
+    client.test("Only mleko 500 left", () => client.assert(response.body.fridge.length === 1 && response.body.fridge[0].amount === 500));
+    client.test("Two shortages", () => client.assert(response.body.shortages.length === 2));
+    client.test("jajka short by 3", () => client.assert(byName("jajka").missingAmount === 3));
+    client.test("maka short by 250", () => client.assert(byName("maka").missingAmount === 250));
+%}
+
+### Cook Kakao (everything available)
+POST {{host}}/api/v1/kitchen/recipes/{{recipeKakaoId}}/cook
+Authorization: Bearer {{tokenA}}
+
+> {%
+    client.test("Cook succeeds", () => client.assert(response.status === 200));
+    client.test("No shortages", () => client.assert(response.body.shortages.length === 0));
+    client.test("mleko reduced to 250", () => client.assert(response.body.fridge[0].amount === 250));
+%}
+
+########## Cleanup ##########
+
+### Delete recipe Nalesniki
+DELETE {{host}}/api/v1/kitchen/recipes/{{recipeNalesnikiId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Recipe Nalesniki deleted", () => client.assert(response.status === 204)); %}
+
+### Delete recipe Kakao
+DELETE {{host}}/api/v1/kitchen/recipes/{{recipeKakaoId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Recipe Kakao deleted", () => client.assert(response.status === 204)); %}
+
+### Delete mleko from fridge
+DELETE {{host}}/api/v1/kitchen/fridge/{{fridgeMlekoId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Fridge item mleko deleted", () => client.assert(response.status === 204)); %}
+
+### Delete cukier from shopping list
+DELETE {{host}}/api/v1/kitchen/shopping-list/{{shopCukierId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Shopping item cukier deleted", () => client.assert(response.status === 204)); %}
+
+### Delete product mleko
+DELETE {{host}}/api/v1/kitchen/products/{{mlekoProductId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Product mleko deleted", () => client.assert(response.status === 204)); %}
+
+### Delete product jajka
+DELETE {{host}}/api/v1/kitchen/products/{{jajkaProductId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Product jajka deleted", () => client.assert(response.status === 204)); %}
+
+### Delete product maka
+DELETE {{host}}/api/v1/kitchen/products/{{makaProductId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Product maka deleted", () => client.assert(response.status === 204)); %}
+
+### Delete product cukier
+DELETE {{host}}/api/v1/kitchen/products/{{cukierProductId}}
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Product cukier deleted", () => client.assert(response.status === 204)); %}
+
+### Products of user A are gone after scenarios
+GET {{host}}/api/v1/kitchen/products
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("User A has no products", () => client.assert(response.body.length === 0)); %}
+
+### Fridge of user A is empty
+GET {{host}}/api/v1/kitchen/fridge
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Fridge empty", () => client.assert(response.body.length === 0)); %}
+
+### Shopping list of user A is empty
+GET {{host}}/api/v1/kitchen/shopping-list
+Authorization: Bearer {{tokenA}}
+
+> {% client.test("Shopping list empty", () => client.assert(response.body.length === 0)); %}
