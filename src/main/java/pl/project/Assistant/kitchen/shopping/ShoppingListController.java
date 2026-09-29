@@ -4,6 +4,8 @@ package pl.project.Assistant.kitchen.shopping;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import pl.project.Assistant.kitchen.fridge.dto.FridgeItemResponse;
+import pl.project.Assistant.kitchen.shopping.dto.CheckoutRequest;
 import pl.project.Assistant.kitchen.shopping.dto.ShoppingListItemRequest;
 import pl.project.Assistant.kitchen.shopping.dto.ShoppingListItemResponse;
 
@@ -29,6 +31,11 @@ public class ShoppingListController {
     @GetMapping
     public List<ShoppingListItemResponse> getItemsFromShoppingList(){
         return  shoppingListService.getShoppingList();
+    }
+
+    @PostMapping("/checkout")
+    public List<FridgeItemResponse> checkout(@Valid @RequestBody CheckoutRequest request){
+        return  shoppingListService.checkout(request);
     }
 
     @PutMapping("/{id}")
