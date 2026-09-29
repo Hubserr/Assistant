@@ -5,9 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import pl.project.Assistant.exception.BadRequestException;
 import pl.project.Assistant.exception.ConflictException;
 import pl.project.Assistant.exception.ForbiddenException;
@@ -29,6 +31,16 @@ public class GlobalExceptionHandler {
             errors.put(error.getField(), error.getDefaultMessage()));
     return  ResponseEntity.badRequest().body(errors);
         }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<String> handleNotReadable(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest().body("Malformed request body");
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<String> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest().body("Invalid value for parameter '" + ex.getName() + "'");
+    }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleUnexceptedRuntimeException(RuntimeException ex) {
